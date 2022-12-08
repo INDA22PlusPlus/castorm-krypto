@@ -1,30 +1,51 @@
 import socket
 import threading
+from sign import *
 from globals import *
+
+key = key_gen()
+signatures = {}
 
 def quit(args, client):
     client.close()
     exit()
 
-def encrypt(text):
-    return text
+def encrypt(file, id):
+    data, signature = encrypt_and_sign(file.encode(), key)
+    signatures[id] = signature
+    return data
 
-def decrypt(text):
-    return text
+def decrypt(file, id):
+    data = decrypt_and_verify(file, signatures[id], key)
+    return data
 
 def handleSendFile(args, client):
-    path = args[0]
+    id = int(args[0])
+    path = args[1]
     try:
         with open(path, "r") as file:
-            text = encrypt(file.read())
-            client.send(text.encode())
+            data = encrypt(file.read())
+            packet = Packet(PACKET_ID_WRITE_FILE)
+            packet.write_int(id)
+            packet.write_bytes(data)
+            client.send(packet.get_bytes())
     except:
         print("Could not find file")
+
+def handleGetFile(args, client):
+    id = int(args[0])
+    packet = Packet(PACKET_ID_WRITE_FILE)
+    packet.write_int(id)
+    client.send(packet.get_bytes())
+
+def handleHelp(args, client):
+    pass
 
 cmds = {
     "quit": quit, 
     "sendfile": handleSendFile, 
-    "sendtext": lambda args, client: client.send(" ".join(args).encode())
+    "getfile": handleGetFile,
+    "help": handleHelp
 } 
 
 def handleCmd(cmd, args, client):
@@ -53,23 +74,14 @@ def file_received(args, client):
 def debug(args, client):
     pass
 
-incomingcmds = {
-    "fileerror": file_error,
-    "file": file_received, 
-    "debug": debug
-}
-
-def handleIncomingCmd(cmd, args, client):
-    if cmd not in incomingcmds:
-        print("[WARNING] Received unknown packet type!")
-    pass
 
 def handleData(client, data):
-    s = str(data)
-    ss = s.split()
-    cmd = ss[0]
-    args = ss[1:]
-    handleIncomingCmd(cmd, args, client)
+    packet = Packet(data[0])
+    packet.data = data[1:]
+    if packet.packet_id == PACKET_ID_READ_FILE:
+        id = packet.read_int()
+        file = packet.read_bytes()
+        print(decrypt(file, id))
 
 def handleIncoming(client):
     data = client.recv(1024)
