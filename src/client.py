@@ -56,12 +56,19 @@ def handleGetHash(args, client):
     packet.write_int(id)
     client.send(packet.get_bytes())
 
+def handleGetTamperedFile(args, client):
+    packet = Packet(PACKET_ID_GET_TAMPERED_FILE)
+    id = int(args[0])
+    packet.write_int(id)
+    client.send(packet.get_bytes())
+
 cmds = {
     "quit": quit, 
     "sendfile": handleSendFile, 
     "getfile": handleGetFile,
     "gettophash": handleGetTopHash,
     "gethash": handleGetHash,
+    "gettamperedfile": handleGetTamperedFile,
     "help": handleHelp
 } 
 
@@ -102,9 +109,6 @@ def handleData(client, data):
             print("Data has been tapmered with!")
             print("remote hash:", compute_hash(file))
             print("local hash:", get_node_hash(root, id))
-            resp = Packet(PACKET_ID_GET_HASH)
-            resp.write_int(id)
-            client.send(resp.get_bytes())
 
         else:
             print("Received file:", id)

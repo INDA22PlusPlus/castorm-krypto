@@ -2,6 +2,7 @@ import socket
 import threading
 from merkle import *
 from globals import *
+import secrets
 
 
 files = {
@@ -47,6 +48,19 @@ def handleData(client, address, data):
         response.write_int(id)
         response.write_string(h)
         print("Requested hash:", id)
+        client.send(response.get_bytes())
+    if packet.packet_id == PACKET_ID_GET_TAMPERED_FILE:
+        id = packet.read_int()
+        if id in files:
+            file = files[id]
+        else:
+            print("Requested file does not exist! Id:", id)
+            return
+        response = Packet(PACKET_ID_READ_FILE)
+        response.write_int(id)
+        file = bytes([_a ^ _b for _a, _b in zip(file, secrets.token_bytes(len(file)))])
+        response.write_bytes(file)
+        print("Requested file:", id)
         client.send(response.get_bytes())
 
 def handleConnection(client, address):
