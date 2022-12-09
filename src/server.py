@@ -28,6 +28,11 @@ def handleData(client, address, data):
         response.write_bytes(file)
         print("Requested file:", id)
         client.send(response.get_bytes())
+    if packet.packet_id == PACKET_ID_GET_TOP_HASH:
+        response = Packet(PACKET_ID_GET_TOP_HASH)
+        response.write_string(root.data)
+        print("Requested Top Hash")
+        client.send(response.get_bytes())
 
 def handleConnection(client, address):
     while True:

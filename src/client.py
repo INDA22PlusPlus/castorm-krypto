@@ -1,10 +1,13 @@
 import socket
 import threading
+from merkle import *
 from sign import *
 from globals import *
 
 key = key_gen()
 signatures = {}
+
+root = build_tree([b"nonsense data"])
 
 def quit(args, client):
     client.close()
@@ -28,6 +31,8 @@ def handleSendFile(args, client):
             packet = Packet(PACKET_ID_WRITE_FILE)
             packet.write_int(id)
             packet.write_bytes(data)
+            insert_data_at_index(root, id, data)
+            recalculate_hashes(root)
             client.send(packet.get_bytes())
     except FileNotFoundError:
         print("Could not find file")
@@ -41,10 +46,15 @@ def handleGetFile(args, client):
 def handleHelp(args, client):
     pass
 
+def handleGetTopHash(args, client):
+    packet = Packet(PACKET_ID_GET_TOP_HASH)
+    client.send(packet.get_bytes())
+
 cmds = {
     "quit": quit, 
     "sendfile": handleSendFile, 
     "getfile": handleGetFile,
+    "gettophash": handleGetTopHash,
     "help": handleHelp
 } 
 
@@ -82,13 +92,22 @@ def handleData(client, data):
         id = packet.read_int()
         file = packet.read_bytes()
         print(decrypt(file, id).decode())
+    if packet.packet_id == PACKET_ID_GET_TOP_HASH:
+        h = packet.read_string()
+        print("got top hash:", h)
+        print("actual top hash:", root.data)
+        if h == root.data:
+            print("Server Merkle Tree is valid")
+        else:
+            print("Server Merkle Tree is invalid")
 
 def handleIncoming(client):
-    data = client.recv(1024)
-    if not data:
-        client.close()
-    handleData(client, data)
-    pass
+    while True:
+        data = client.recv(1024)
+        if not data:
+            client.close()
+            break
+        handleData(client, data)
 
 def client_program():
 
