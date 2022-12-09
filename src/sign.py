@@ -9,8 +9,8 @@ def encrypt_and_sign(data, private_key):
     encrypted_data = public_key.encrypt(
         data,
         padding.OAEP(
-            mgf=padding.MGF1(algorithm=hashes.SHA256()),
-            algorithm=hashes.SHA256(),
+            mgf=padding.MGF1(algorithm=hashes.SHA224()),
+            algorithm=hashes.SHA224(),
             label=None
         )
     )
@@ -18,10 +18,10 @@ def encrypt_and_sign(data, private_key):
     signature = private_key.sign(
         encrypted_data,
         padding.PSS(
-            mgf=padding.MGF1(hashes.SHA256()),
+            mgf=padding.MGF1(hashes.SHA224()),
             salt_length=padding.PSS.MAX_LENGTH
         ),
-        hashes.SHA256()
+        hashes.SHA224()
     )
 
     return encrypted_data, signature
@@ -34,17 +34,17 @@ def decrypt_and_verify(encrypted_data, signature, private_key):
         signature,
         encrypted_data,
         padding.PSS(
-            mgf=padding.MGF1(hashes.SHA256()),
+            mgf=padding.MGF1(hashes.SHA224()),
             salt_length=padding.PSS.MAX_LENGTH
         ),
-        hashes.SHA256()
+        hashes.SHA224()
     )
 
     data = private_key.decrypt(
         encrypted_data,
         padding.OAEP(
-            mgf=padding.MGF1(algorithm=hashes.SHA256()),
-            algorithm=hashes.SHA256(),
+            mgf=padding.MGF1(algorithm=hashes.SHA224()),
+            algorithm=hashes.SHA224(),
             label=None
         )
     )

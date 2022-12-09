@@ -24,17 +24,17 @@ def handleSendFile(args, client):
     path = args[1]
     try:
         with open(path, "r") as file:
-            data = encrypt(file.read())
+            data = encrypt(file.read(), id)
             packet = Packet(PACKET_ID_WRITE_FILE)
             packet.write_int(id)
             packet.write_bytes(data)
             client.send(packet.get_bytes())
-    except:
+    except FileNotFoundError:
         print("Could not find file")
 
 def handleGetFile(args, client):
     id = int(args[0])
-    packet = Packet(PACKET_ID_WRITE_FILE)
+    packet = Packet(PACKET_ID_READ_FILE)
     packet.write_int(id)
     client.send(packet.get_bytes())
 
@@ -76,12 +76,12 @@ def debug(args, client):
 
 
 def handleData(client, data):
-    packet = Packet(data[0])
+    packet = Packet(int(data[0]))
     packet.data = data[1:]
     if packet.packet_id == PACKET_ID_READ_FILE:
         id = packet.read_int()
         file = packet.read_bytes()
-        print(decrypt(file, id))
+        print(decrypt(file, id).decode())
 
 def handleIncoming(client):
     data = client.recv(1024)
@@ -96,9 +96,13 @@ def client_program():
     client_socket.connect((IP_ADDRESS, PORT)) 
 
     t = threading.Thread(target=handleInput, args=(client_socket,))
+    t2 = threading.Thread(target=handleIncoming, args=(client_socket,))
     
     t.start()
+    t2.start()
+
     t.join()
-    
+    t2.join()
+
 if __name__ == '__main__':
     client_program()

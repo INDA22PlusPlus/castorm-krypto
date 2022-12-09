@@ -7,27 +7,32 @@ from globals import *
 files = {
     0: b"nonsense data"
 }
-merkle_tree = build_tree([files[0]])
+root = build_tree([files[0]])
 
 def handleData(client, address, data):
     packet = Packet(int(data[0]))
     packet.data = data[1:]
+    print("id:", packet.packet_id)
     if packet.packet_id == PACKET_ID_WRITE_FILE:
         id = packet.read_int()
         file = packet.read_bytes()
         files[id] = file
-        merkle_tree.insert(file)
+        insert_data_at_index(root, id, file)
+        recalculate_hashes(root)
+        print("Got file:", file)
     if packet.packet_id == PACKET_ID_READ_FILE:
         id = packet.read_int()
         file = files[id]
         response = Packet(PACKET_ID_READ_FILE)
-        packet.write_int(id)
+        response.write_int(id)
         response.write_bytes(file)
+        print("Requested file:", id)
         client.send(response.get_bytes())
 
 def handleConnection(client, address):
     while True:
         data = client.recv(1024)
+        print("recieved data")
         if not data:
             break
         handleData(client, address, data)

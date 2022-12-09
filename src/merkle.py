@@ -106,7 +106,8 @@ def get_node_hash(root, index):
     # Return None if the data hash was not found in the tree
     return None
 
-def insert_data_at_index(root, index, data_hash):
+def insert_data_at_index(root, index, data):
+    data_hash = compute_hash(data)
     # If the root is a leaf node, insert the data hash at the leaf node's index
     if root.left is None and root.right is None:
         # If the index matches the leaf node's index, update the data hash
