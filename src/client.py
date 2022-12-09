@@ -37,6 +37,18 @@ def handleSendFile(args, client):
     except FileNotFoundError:
         print("Could not find file")
 
+def handleSendText(args, client):
+    id = int(args[0])
+    text = " ".join(args[1:])
+    data = encrypt(text, id)
+    packet = Packet(PACKET_ID_WRITE_FILE)
+    packet.write_int(id)
+    packet.write_bytes(data)
+    insert_data_at_index(root, id, data)
+    recalculate_hashes(root)
+    client.send(packet.get_bytes())
+
+
 def handleGetFile(args, client):
     id = int(args[0])
     packet = Packet(PACKET_ID_READ_FILE)
@@ -64,7 +76,8 @@ def handleGetTamperedFile(args, client):
 
 cmds = {
     "quit": quit, 
-    "sendfile": handleSendFile, 
+    "sendfile": handleSendFile,
+    "sendtext": handleSendText, 
     "getfile": handleGetFile,
     "gettophash": handleGetTopHash,
     "gethash": handleGetHash,
