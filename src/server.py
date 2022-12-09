@@ -22,7 +22,11 @@ def handleData(client, address, data):
         print("Got file:", file)
     if packet.packet_id == PACKET_ID_READ_FILE:
         id = packet.read_int()
-        file = files[id]
+        if id in files:
+            file = files[id]
+        else:
+            print("Requested file does not exist! Id:", id)
+            return
         response = Packet(PACKET_ID_READ_FILE)
         response.write_int(id)
         response.write_bytes(file)
@@ -36,6 +40,9 @@ def handleData(client, address, data):
     if packet.packet_id == PACKET_ID_GET_HASH:
         id = packet.read_int()
         h = get_node_hash(root, id)
+        if h is None:
+            print("hash does not exist in tree. Id:", id)
+            return
         response = Packet(PACKET_ID_GET_HASH)
         response.write_int(id)
         response.write_string(h)
