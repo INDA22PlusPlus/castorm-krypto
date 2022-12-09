@@ -26,6 +26,16 @@ def encrypt_and_sign(data, private_key):
 
     return encrypted_data, signature
 
+def verify(data, signature, key):
+    return key.public_key().verify(
+        signature,
+        data,
+        padding.PSS(
+            mgf=padding.MGF1(hashes.SHA224()),
+            salt_length=padding.PSS.MAX_LENGTH
+        ),
+        hashes.SHA224()
+    )
 
 
 def decrypt_and_verify(encrypted_data, signature, private_key):

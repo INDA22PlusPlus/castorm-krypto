@@ -3,6 +3,7 @@ import threading
 from merkle import *
 from sign import *
 from globals import *
+from cryptography.exceptions import InvalidSignature
 
 key = key_gen()
 signatures = {}
@@ -19,8 +20,11 @@ def encrypt(file, id):
     return data
 
 def decrypt(file, id):
-    data = decrypt_and_verify(file, signatures[id], key)
-    return data
+    try:
+        data = decrypt_and_verify(file, signatures[id], key)
+        return data
+    except:
+        raise InvalidSignature()
 
 def handleSendFile(args, client):
     id = int(args[0])
@@ -118,14 +122,10 @@ def handleData(client, data):
     if packet.packet_id == PACKET_ID_READ_FILE:
         id = packet.read_int()
         file = packet.read_bytes()
-        if compute_hash(file) != get_node_hash(root, id):
-            print("Data has been tapmered with!")
-            print("remote hash:", compute_hash(file))
-            print("local hash:", get_node_hash(root, id))
-
-        else:
-            print("Received file:", id)
+        try:
             print(decrypt(file, id).decode())
+        except InvalidSignature:
+            print("Data has been tampered with!")
     if packet.packet_id == PACKET_ID_GET_TOP_HASH:
         h = packet.read_string()
         print("got top hash:", h)
