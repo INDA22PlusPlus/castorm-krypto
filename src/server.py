@@ -33,6 +33,14 @@ def handleData(client, address, data):
         response.write_string(root.data)
         print("Requested Top Hash")
         client.send(response.get_bytes())
+    if packet.packet_id == PACKET_ID_GET_HASH:
+        id = packet.read_int()
+        h = get_node_hash(root, id)
+        response = Packet(PACKET_ID_GET_HASH)
+        response.write_int(id)
+        response.write_string(h)
+        print("Requested hash:", id)
+        client.send(response.get_bytes())
 
 def handleConnection(client, address):
     while True:

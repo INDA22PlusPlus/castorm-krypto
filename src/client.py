@@ -50,11 +50,18 @@ def handleGetTopHash(args, client):
     packet = Packet(PACKET_ID_GET_TOP_HASH)
     client.send(packet.get_bytes())
 
+def handleGetHash(args, client):
+    packet = Packet(PACKET_ID_GET_HASH)
+    id = int(args[0])
+    packet.write_int(id)
+    client.send(packet.get_bytes())
+
 cmds = {
     "quit": quit, 
     "sendfile": handleSendFile, 
     "getfile": handleGetFile,
     "gettophash": handleGetTopHash,
+    "gethash": handleGetHash,
     "help": handleHelp
 } 
 
@@ -91,7 +98,17 @@ def handleData(client, data):
     if packet.packet_id == PACKET_ID_READ_FILE:
         id = packet.read_int()
         file = packet.read_bytes()
-        print(decrypt(file, id).decode())
+        if compute_hash(file) != get_node_hash(root, id):
+            print("Data has been tapmered with!")
+            print("remote hash:", compute_hash(file))
+            print("local hash:", get_node_hash(root, id))
+            resp = Packet(PACKET_ID_GET_HASH)
+            resp.write_int(id)
+            client.send(resp.get_bytes())
+
+        else:
+            print("Received file:", id)
+            print(decrypt(file, id).decode())
     if packet.packet_id == PACKET_ID_GET_TOP_HASH:
         h = packet.read_string()
         print("got top hash:", h)
@@ -100,6 +117,16 @@ def handleData(client, data):
             print("Server Merkle Tree is valid")
         else:
             print("Server Merkle Tree is invalid")
+    if packet.packet_id == PACKET_ID_GET_HASH:
+        id = packet.read_int()
+        h = packet.read_string()
+        print("got hash for id", id, ":", h)
+        print("actual hash for id", id, ":", h)
+        if h == get_node_hash(root, id):
+            print("Server Merkle Tree is valid")
+        else:
+            print("Server Merkle Tree is invalid")
+
 
 def handleIncoming(client):
     while True:

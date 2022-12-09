@@ -6,6 +6,7 @@ IP_ADDRESS = gethostname()
 PACKET_ID_WRITE_FILE = 1
 PACKET_ID_READ_FILE = 2
 PACKET_ID_GET_TOP_HASH = 3
+PACKET_ID_GET_HASH = 4
 
 class Packet:
     def __init__(self, packet_id: int) -> None:
